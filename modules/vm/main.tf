@@ -1,35 +1,85 @@
-resource "azurerm_linux_virtual_machine" "mylinuxvm" {
-  for_each = var.force_map 
-  name                = "${local.resource_name_prefix}-vm-${each.key}"
-  location            = azurerm_resource_group.myrg.location
-  resource_group_name = azurerm_resource_group.myrg.name
-  size                = "Standard_F2"
-  admin_username      = "azureuser"
-  #when we create the vm the vm will be attached with my nic card
-  #when i create teh first vm the vm should pick first nic card it should pick the second nic
+resource "azurerm_availability_set" "myavailabilityset" {
+  name                = "example-aset"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+}
+
+resource "azurerm_public_ip" "my-public-ip" {
+  name                = var.public_ip_address_name
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  allocation_method   = "Dynamic"
+
+  tags = {
+    environment = "Testing"
+  }
+}
+
+resource "azurerm_network_interface" "mynetworkinterface" {
+  name                = var.network_interface_name
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  ip_configuration {
+    name                          = "internal"
+    subnet_id                     = var.azurerm_subnet_id
+    private_ip_address_allocation = "Dynamic"
+
+    public_ip_address_id = azurerm_public_ip.my-public-ip.id 
+  }
+}
+
+# Windows 10 Virtual Machine
+resource "azurerm_windows_virtual_machine" "myvirtualmachine" {
+  name                = var.my_virtual_machine_name
+  resource_group_name = var.resource_group_name
+  location            = var.location
+  size                = var.my_virtual_machine_size
+  admin_username      = "adminuser"
+  admin_password      = var.my_virtual_machine_password
+  availability_set_id = azurerm_availability_set.myavailabilityset.id
   network_interface_ids = [
-    #this nic card has list of values
-    azurerm_network_interface.myvmnic[each.key].id
+    azurerm_network_interface.mynetworkinterface.id,
   ]
 
-  admin_ssh_key {
-    username   = "azureuser"
-    #when i want to upload the public key 
-    #i know that my public key is in current directory terraform has come up with a function
-    public_key = file("${path.module}/ssh-keys/terraform-azure.pub")
-  }
-
   os_disk {
-    name = "osdisk-${each.key}"
     caching              = "ReadWrite"
     storage_account_type = "Standard_LRS"
   }
 
   source_image_reference {
-    publisher = "Canonical"
-    offer     = "0001-com-ubuntu-server-jammy"
-    sku       = "22_04-lts"
+    publisher = "MicrosoftWindowsDesktop"
+    offer     = var.source_image_offer
+    sku       = var.source_image_sku
     version   = "latest"
   }
-  custom_data = filebase64("${path.module}/app/app.sh")
+}
+
+# Security Group for allowing RDP Connection
+resource "azurerm_network_security_group" "sg-rdp-connection" {
+  name                = "allowrdpconnection"
+  location            = var.location
+  resource_group_name = var.resource_group_name
+
+  security_rule {
+    name                       = "rdpport"
+    priority                   = 100
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "3389"
+    source_address_prefix      = "*"
+    destination_address_prefix = "*"
+  }
+
+  tags = {
+    environment = "Testing"
+  }
+}
+
+# Associate security group with network interface
+resource "azurerm_network_interface_security_group_association" "example" {
+  network_interface_id      = azurerm_network_interface.mynetworkinterface.id
+  network_security_group_id = azurerm_network_security_group.sg-rdp-connection.id
 }
