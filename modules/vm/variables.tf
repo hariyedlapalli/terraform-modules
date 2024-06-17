@@ -58,7 +58,3 @@ variable "resource_group_location" {
   description = "Location of the resources"
 }
 
-variable "resource_group_name" {
-  type    = string
-  description = "Name of the resource group, which contains the resources"
-}
