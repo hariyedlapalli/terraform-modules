@@ -12,7 +12,7 @@ resource "azurerm_postgresql_server" "example" {
   storage_mb = var.postgresql_instances[count.index].storage_mb
 
   backup_retention_days = var.postgresql_instances[count.index].backup_retention_days
-  geo_redundant_backup  = var.postgresql_instances[count.index].geo_redundant_backup
+  #geo_redundant_backup  = var.postgresql_instances[count.index].geo_redundant_backup
   auto_grow_enabled     = var.postgresql_instances[count.index].auto_grow_enabled
 
   public_network_access_enabled    = true
