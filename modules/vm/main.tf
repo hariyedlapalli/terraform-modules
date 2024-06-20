@@ -25,7 +25,7 @@ resource "azurerm_network_interface" "mynetworkinterface" {
     subnet_id                     = var.azurerm_subnet_id
     private_ip_address_allocation = "Dynamic"
 
-    public_ip_address_id = azurerm_public_ip.my-public-ip.id 
+    public_ip_address_id = azurerm_public_ip.my-public-ip.id
   }
 }
 

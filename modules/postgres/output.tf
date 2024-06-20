@@ -1,7 +1,7 @@
-output "db_instance_address" {
-  value = aws_db_instance.default.address
+output "postgresql_server_ids" {
+  value = { for instance in azurerm_postgresql_server.example : instance.name => instance.id }
 }
 
-output "db_instance_endpoint" {
-  value = aws_db_instance.default.endpoint
+output "postgresql_database_ids" {
+  value = { for db in azurerm_postgresql_database.example : db.name => db.id }
 }

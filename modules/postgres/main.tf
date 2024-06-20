@@ -1,19 +1,30 @@
-resource "aws_db_instance" "default" {
-  count                = length(var.instances)
+resource "azurerm_postgresql_server" "example" {
+  count               = length(var.postgresql_instances)
+  name                = var.postgresql_instances[count.index].name
+  location            = var.postgresql_instances[count.index].location
+  resource_group_name = var.resource_group_name
 
-  allocated_storage    = var.instances[count.index].allocated_storage
-  storage_type         = "gp2"
-  engine               = "postgres"
-  engine_version       = var.instances[count.index].engine_version
-  instance_class       = var.instances[count.index].instance_class
-  name                 = var.instances[count.index].db_name
-  username             = var.instances[count.index].db_username
-  password             = var.instances[count.index].db_password
-  parameter_group_name = "default.postgres9.6"
-  db_subnet_group_name = var.instances[count.index].subnet_group_name
-  vpc_security_group_ids = var.instances[count.index].vpc_security_group_ids
+  administrator_login          = var.postgresql_instances[count.index].administrator_login
+  administrator_login_password = var.postgresql_instances[count.index].administrator_password
 
-  tags = {
-    Name = var.instances[count.index].name
-  }
+  sku_name   = var.postgresql_instances[count.index].sku_name
+  version    = var.postgresql_instances[count.index].version
+  storage_mb = var.postgresql_instances[count.index].storage_mb
+
+  backup_retention_days = var.postgresql_instances[count.index].backup_retention_days
+  geo_redundant_backup  = var.postgresql_instances[count.index].geo_redundant_backup
+  auto_grow_enabled     = var.postgresql_instances[count.index].auto_grow_enabled
+
+  public_network_access_enabled    = true
+  ssl_enforcement_enabled          = true
+  ssl_minimal_tls_version_enforced = "TLS1_2"
+}
+resource "azurerm_postgresql_database" "example" {
+  for_each            = { for inst, dbs in var.postgresql_databases : inst => dbs if contains(keys(var.postgresql_databases), inst) }
+  count               = length(each.value)
+  name                = each.value[count.index]
+  resource_group_name = var.resource_group_name
+  server_name         = each.key
+  charset             = "UTF8"
+  collation           = "English_United States.1252"
 }
