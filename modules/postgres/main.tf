@@ -28,15 +28,16 @@ resource "azurerm_postgresql_server" "example" {
   charset             = "UTF8"
   collation           = "English_United States.1252"
 }*/
+
 resource "azurerm_postgresql_database" "example" {
-  for_each = toset(flatten([
+  for_each = { for db in flatten([
     for inst, dbs in var.postgresql_databases : [
       for db in dbs : {
         server_name = inst
         db_name     = db
       }
     ]
-  ]))
+  ]) : "${db.server_name}-${db.db_name}" => db }
 
   name                = each.value.db_name
   resource_group_name = var.resource_group_name
