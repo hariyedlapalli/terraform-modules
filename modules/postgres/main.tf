@@ -44,4 +44,9 @@ resource "azurerm_postgresql_database" "example" {
   server_name         = each.value.server_name
   charset             = "UTF8"
   collation           = "English_United States.1252"
+
+    depends_on = [
+    azurerm_postgresql_server.example
+  ]
 }
+
