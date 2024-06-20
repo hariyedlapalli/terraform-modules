@@ -19,12 +19,28 @@ resource "azurerm_postgresql_server" "example" {
   ssl_enforcement_enabled          = true
   ssl_minimal_tls_version_enforced = "TLS1_2"
 }
-resource "azurerm_postgresql_database" "example" {
+/*resource "azurerm_postgresql_database" "example" {
   for_each            = { for inst, dbs in var.postgresql_databases : inst => dbs if contains(keys(var.postgresql_databases), inst) }
   count               = length(each.value)
   name                = each.value[count.index]
   resource_group_name = var.resource_group_name
   server_name         = each.key
+  charset             = "UTF8"
+  collation           = "English_United States.1252"
+}*/
+resource "azurerm_postgresql_database" "example" {
+  for_each = toset(flatten([
+    for inst, dbs in var.postgresql_databases : [
+      for db in dbs : {
+        server_name = inst
+        db_name     = db
+      }
+    ]
+  ]))
+
+  name                = each.value.db_name
+  resource_group_name = var.resource_group_name
+  server_name         = each.value.server_name
   charset             = "UTF8"
   collation           = "English_United States.1252"
 }
